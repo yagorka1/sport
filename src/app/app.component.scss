@@ -1,0 +1,97 @@
+.shell {
+  max-width: 780px;
+  margin: 0 auto;
+  padding: calc(16px + var(--safe-top)) 16px calc(76px + var(--safe-bottom));
+}
+
+.banner {
+  margin-bottom: 14px;
+  padding: 10px 13px;
+  border-radius: 10px;
+  background: #1b2333;
+  border: 1px solid #2c3a55;
+  color: #b9c6dd;
+  font-size: 13px;
+
+  code {
+    background: #0e1420;
+    padding: 1px 5px;
+    border-radius: 4px;
+  }
+}
+
+.tabs {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  background: rgba(20, 23, 29, 0.96);
+  backdrop-filter: blur(12px);
+  border-top: 1px solid var(--border);
+  padding-bottom: var(--safe-bottom);
+}
+
+.tabs__item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: 9px 0 11px;
+  color: var(--text-dim);
+  font-size: 11.5px;
+
+  span {
+    font-size: 19px;
+    line-height: 1;
+  }
+
+  &--on {
+    color: var(--accent);
+  }
+}
+
+.signin {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+}
+
+.signin__box {
+  max-width: 400px;
+  padding: 28px;
+  display: grid;
+  gap: 14px;
+  text-align: center;
+}
+
+.signin__logo {
+  font-size: 44px;
+}
+
+.signin__lang {
+  justify-self: center;
+  padding: 4px 8px;
+  border: 0;
+  background: none;
+  color: var(--text-dim);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+
+  &:hover {
+    color: var(--accent);
+  }
+}
+
+h1 {
+  margin: 0;
+  font-size: 21px;
+}
+
+p {
+  margin: 0;
+  font-size: 14px;
+}

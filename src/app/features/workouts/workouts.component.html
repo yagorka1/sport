@@ -1,0 +1,41 @@
+<h1>{{ 'nav.workouts' | t }}</h1>
+<app-period-switch [value]="stats.period()" (changed)="stats.setPeriod($event)" />
+
+@if (stats.workouts().length === 0) {
+  <p class="muted top">{{ 'workouts.empty' | t }}</p>
+} @else {
+  <section class="types">
+    @for (stat of byType(); track stat.type) {
+      <div class="card type">
+        <strong>{{ typeTitle(stat.type) }}</strong>
+        <span class="muted">{{ 'workouts.count' | t: { n: stat.count } }} · {{ duration(stat.totalSec) }}</span>
+      </div>
+    }
+  </section>
+
+  <section class="feed">
+    @for (workout of stats.workouts(); track workout.id) {
+      <article class="card item">
+        <header>
+          <strong>{{ title(workout) }}</strong>
+          <span class="muted">{{ when(workout) }}</span>
+        </header>
+        <div class="item__row">
+          <span>⏱ {{ duration(workout.durationSec) }}</span>
+          @if (workout.distanceM !== null) {
+            <span>📍 {{ km(workout.distanceM) }} {{ 'unit.km' | t }}</span>
+          }
+          @if (workout.calories !== null) {
+            <span>🔥 {{ workout.calories }} {{ 'unit.kcal' | t }}</span>
+          }
+          @if (workout.avgHeartRate !== null) {
+            <span>❤️ {{ workout.avgHeartRate }} {{ 'unit.bpm' | t }}</span>
+          }
+          @if (pace(workout); as pace) {
+            <span>⚡ {{ 'workouts.pace' | t: { pace: pace } }}</span>
+          }
+        </div>
+      </article>
+    }
+  </section>
+}

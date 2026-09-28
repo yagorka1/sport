@@ -1,0 +1,46 @@
+@if (needsSignIn()) {
+  <main class="signin">
+    <div class="signin__box card">
+      <div class="signin__logo">🏃</div>
+      <h1>{{ 'app.title' | t }}</h1>
+      <p class="muted">{{ 'signin.text' | t }}</p>
+      @if (auth.error(); as error) {
+        <div class="notice notice--error">{{ error | t }}</div>
+      }
+      <button class="btn btn--primary" (click)="auth.signInWithGoogle()">
+        {{ 'signin.button' | t }}
+      </button>
+      <button class="signin__lang" (click)="toggleLang()">{{ otherLangKey() | t }}</button>
+    </div>
+  </main>
+} @else {
+  <div class="shell">
+    @if (!firebaseReady) {
+      <div class="banner">
+        {{ 'banner.noFirebase.before' | t }}
+        <code>src/environments/environment.ts</code>{{ 'banner.noFirebase.after' | t }}
+      </div>
+    } @else if (health.isDemo) {
+      <div class="banner">
+        {{ 'banner.web' | t }}
+        @if (!hasRealData()) {
+          {{ 'banner.noData' | t }}
+        }
+      </div>
+    }
+
+    <router-outlet />
+
+    <nav class="tabs">
+      <a routerLink="/" routerLinkActive="tabs__item--on" [routerLinkActiveOptions]="{ exact: true }" class="tabs__item">
+        <span>📊</span>{{ 'nav.overview' | t }}
+      </a>
+      <a routerLink="/workouts" routerLinkActive="tabs__item--on" class="tabs__item">
+        <span>🏋️</span>{{ 'nav.workouts' | t }}
+      </a>
+      <a routerLink="/settings" routerLinkActive="tabs__item--on" class="tabs__item">
+        <span>⚙️</span>{{ 'nav.settings' | t }}
+      </a>
+    </nav>
+  </div>
+}

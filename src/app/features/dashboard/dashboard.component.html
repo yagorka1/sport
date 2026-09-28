@@ -1,0 +1,54 @@
+<header class="head">
+  <h1>{{ 'nav.overview' | t }}</h1>
+  @if (sync.canSync()) {
+    <button class="btn" (click)="sync.sync()" [disabled]="sync.state() === 'running'">
+      {{ (sync.state() === 'running' ? 'dashboard.syncing' : 'dashboard.refresh') | t }}
+    </button>
+  }
+</header>
+
+<app-period-switch [value]="stats.period()" (changed)="stats.setPeriod($event)" />
+
+@if (sync.state() === 'error') {
+  <div class="notice notice--error gap">{{ sync.message() | t }}</div>
+} @else if (sync.state() === 'running' || sync.state() === 'done') {
+  <div class="notice gap">{{ sync.message() | t }}</div>
+}
+
+@if (stats.error(); as error) {
+  <div class="notice notice--error gap">{{ error | t }}</div>
+}
+
+@if (stats.loading()) {
+  <p class="muted gap">{{ 'common.loading' | t }}</p>
+} @else if (isEmpty()) {
+  <div class="notice notice--warn gap">{{ 'dashboard.empty' | t }}</div>
+} @else {
+  <section class="grid">
+    @for (summary of stats.summaries(); track summary.metric.id) {
+      <app-metric-card [summary]="summary" [caption]="caption(summary)" />
+    }
+  </section>
+
+  <section class="card block">
+    <div class="block__head">
+      <h2>{{ 'nav.workouts' | t }}</h2>
+      <a routerLink="/workouts">{{ 'dashboard.allWorkouts' | t }}</a>
+    </div>
+    @if (stats.workouts().length === 0) {
+      <p class="muted">{{ 'dashboard.noWorkouts' | t }}</p>
+    } @else {
+      <p class="block__total">
+        {{ 'workouts.count' | t: { n: stats.workouts().length } }} · {{ totalWorkoutTime() }}
+      </p>
+      <ul class="list">
+        @for (workout of recentWorkouts(); track workout.id) {
+          <li>
+            <span>{{ title(workout) }}</span>
+            <span class="muted">{{ duration(workout.durationSec) }}</span>
+          </li>
+        }
+      </ul>
+    }
+  </section>
+}

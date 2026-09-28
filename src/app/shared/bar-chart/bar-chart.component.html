@@ -1,0 +1,23 @@
+<div class="chart">
+  @if (goalLine() !== null) {
+    <div class="chart__goal" [style.bottom.%]="goalLine()">
+      <span>{{ 'chart.goal' | t: { goal: metric().dailyGoal ?? 0 } }}</span>
+    </div>
+  }
+  <div class="chart__bars">
+    @for (bar of bars(); track $index) {
+      <div class="chart__col" [title]="bar.tooltip">
+        <div
+          class="chart__bar"
+          [class.chart__bar--goal]="bar.goalHit"
+          [style.height.%]="bar.height"
+          [style.background]="bar.goalHit ? metric().color : 'var(--surface-2)'"
+        ></div>
+      </div>
+    }
+  </div>
+</div>
+<div class="chart__axis">
+  <span>{{ bars()[0]?.label }}</span>
+  <span>{{ bars()[bars().length - 1]?.label }}</span>
+</div>

@@ -1,0 +1,25 @@
+.switch {
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 11px;
+}
+
+.switch__btn {
+  flex: 1;
+  padding: 7px 4px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-dim);
+  font-size: 13px;
+  white-space: nowrap;
+
+  &--on {
+    background: var(--surface-2);
+    color: var(--text);
+    font-weight: 600;
+  }
+}

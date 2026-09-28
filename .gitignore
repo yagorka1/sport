@@ -1,0 +1,17 @@
+node_modules/
+www/
+out-tsc/
+.angular/
+
+# Нативный проект генерируется `npx cap add android` + scripts\apply-native.ps1.
+/android/
+
+# Секреты и ключи подписи — в репозиторий не попадают.
+google-services.json
+*.keystore
+*.jks
+src/environments/environment.local.ts
+
+.idea/
+.vscode/
+*.log

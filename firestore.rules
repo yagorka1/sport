@@ -1,0 +1,16 @@
+rules_version = '2';
+
+// The only access rule: everyone reads and writes their own subtree only.
+// This is what replaces a custom backend — the Firebase keys in the client
+// grant nothing on their own.
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /users/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+
+      match /{document=**} {
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+      }
+    }
+  }
+}

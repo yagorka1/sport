@@ -1,0 +1,95 @@
+<h1>{{ 'nav.settings' | t }}</h1>
+
+<section class="card block">
+  <h2>{{ 'settings.language' | t }}</h2>
+  <div class="buttons">
+    @for (option of langs; track option) {
+      <button
+        class="btn"
+        [class.btn--primary]="option === lang()"
+        [attr.aria-pressed]="option === lang()"
+        (click)="setLang(option)"
+      >
+        {{ langLabel(option) | t }}
+      </button>
+    }
+  </div>
+</section>
+
+<section class="card block">
+  <h2>{{ 'settings.account' | t }}</h2>
+  @if (auth.user(); as user) {
+    <p class="row">
+      <span>{{ user.displayName ?? user.email }}</span>
+      <button class="btn" (click)="auth.signOut()">{{ 'settings.signOut' | t }}</button>
+    </p>
+  } @else {
+    <p class="muted">
+      {{ (firebaseReady ? 'settings.notSignedIn' : 'settings.notSignedInNoFirebase') | t }}
+    </p>
+  }
+</section>
+
+<section class="card block">
+  <h2>{{ 'settings.source' | t }}</h2>
+  <p class="row">
+    <span>{{ health.source.labelKey | t }}</span>
+    <span class="tag">{{ statusLabel() }}</span>
+  </p>
+  @if (health.status() === 'needs-permission') {
+    <p class="muted">{{ 'settings.needPermission' | t }}</p>
+    <button class="btn btn--primary" (click)="grant()">{{ 'settings.grant' | t }}</button>
+  }
+  @if (health.status() === 'unavailable') {
+    <div class="notice notice--warn">{{ 'settings.unavailable' | t }}</div>
+  }
+  @if (health.status() === 'ready') {
+    <button class="btn" (click)="health.openSystemSettings()">
+      {{ 'settings.healthConnectSettings' | t }}
+    </button>
+  }
+</section>
+
+<section class="card block">
+  <h2>{{ 'settings.sync' | t }}</h2>
+  <p class="row">
+    <span class="muted">{{ 'settings.lastSync' | t }}</span>
+    <span>{{ lastSync() }}</span>
+  </p>
+  @if (sync.canSync()) {
+    <div class="buttons">
+      <button class="btn btn--primary" (click)="run(false)" [disabled]="running()">
+        {{ 'settings.syncNow' | t }}
+      </button>
+      <button class="btn" (click)="run(true)" [disabled]="running()">
+        {{ 'settings.resyncYear' | t }}
+      </button>
+    </div>
+  } @else {
+    <p class="muted">{{ 'settings.syncMobileOnly' | t }}</p>
+  }
+  @if (sync.message(); as message) {
+    <div class="notice" [class.notice--error]="sync.state() === 'error'">
+      {{ message | t }}
+    </div>
+  }
+</section>
+
+<section class="card block">
+  <h2>{{ 'settings.metrics' | t }}</h2>
+  <p class="muted small">
+    {{ 'settings.metricsHint.definedIn' | t }}
+    <code>src/app/core/metrics/metric.registry.ts</code>{{ 'settings.metricsHint.enable' | t }}
+    <code>enabled: true</code> {{ 'settings.metricsHint.rebuild' | t }}
+  </p>
+  <ul class="metrics">
+    @for (metric of allMetrics; track metric.id) {
+      <li>
+        <span>{{ metric.icon }} {{ metric.titleKey | t }}</span>
+        <span class="tag" [class.tag--off]="!metric.enabled">
+          {{ (metric.enabled ? 'settings.on' : 'settings.off') | t }}
+        </span>
+      </li>
+    }
+  </ul>
+</section>

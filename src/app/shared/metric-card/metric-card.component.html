@@ -1,0 +1,28 @@
+<a class="tile card" [routerLink]="['/metric', summary().metric.id]">
+  <div class="tile__head">
+    <span class="tile__icon">{{ summary().metric.icon }}</span>
+    <span class="tile__title">{{ (summary().metric.shortTitleKey ?? summary().metric.titleKey) | t }}</span>
+    @if (summary().deltaPercent !== null) {
+      <span class="tile__delta" [class.tile__delta--down]="summary().deltaPercent! < 0">
+        {{ summary().deltaPercent! > 0 ? '↑' : '↓' }}{{ abs(summary().deltaPercent!) }}%
+      </span>
+    }
+  </div>
+
+  <div class="tile__value">
+    {{ value() }}
+    <small>{{ summary().metric.unitKey | t }}</small>
+  </div>
+
+  <div class="tile__foot muted">{{ caption() }}</div>
+
+  @if (progress() !== null) {
+    <div class="tile__bar">
+      <div
+        class="tile__fill"
+        [style.width.%]="progress()"
+        [style.background]="summary().metric.color"
+      ></div>
+    </div>
+  }
+</a>

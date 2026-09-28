@@ -1,0 +1,38 @@
+{
+  "name": "sport-stats",
+  "version": "0.1.0",
+  "description": "Личная статистика спорта: Angular-сайт + Android APK, данные из Health Connect, хранение в Firestore",
+  "private": true,
+  "scripts": {
+    "start": "ng serve",
+    "build": "ng build",
+    "build:mobile": "ng build --configuration production --base-href ./",
+    "watch": "ng build --watch --configuration development",
+    "sync": "npm run build:mobile && npx cap sync android",
+    "android:open": "npx cap open android",
+    "android:run": "npm run sync && npx cap run android",
+    "apk:debug": "npm run sync && cd android && .\\gradlew.bat assembleDebug",
+    "apk:release": "npm run sync && cd android && .\\gradlew.bat assembleRelease"
+  },
+  "dependencies": {
+    "@angular/common": "^22.2.0",
+    "@angular/compiler": "^22.2.0",
+    "@angular/core": "^22.2.0",
+    "@angular/forms": "^22.2.0",
+    "@angular/platform-browser": "^22.2.0",
+    "@angular/router": "^22.2.0",
+    "@capacitor-firebase/authentication": "^8.5.2",
+    "@capacitor/android": "^8.5.2",
+    "@capacitor/core": "^8.5.2",
+    "firebase": "^12.19.0",
+    "rxjs": "~7.8.2",
+    "tslib": "^2.8.0"
+  },
+  "devDependencies": {
+    "@angular/build": "^22.2.0",
+    "@angular/cli": "^22.2.0",
+    "@angular/compiler-cli": "^22.2.0",
+    "@capacitor/cli": "^8.5.2",
+    "typescript": "~6.0.0"
+  }
+}

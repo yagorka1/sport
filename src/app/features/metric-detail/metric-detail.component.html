@@ -1,0 +1,58 @@
+@let m = metric();
+@if (!m) {
+  <p class="muted">{{ 'detail.notFound' | t }} <a routerLink="/">{{ 'detail.toOverview' | t }}</a></p>
+} @else {
+  @let s = summary();
+  @let unit = m.unitKey | t;
+  <header class="head">
+    <a routerLink="/" class="back">←</a>
+    <h1>{{ m.icon }} {{ m.titleKey | t }}</h1>
+  </header>
+
+  <app-period-switch [value]="stats.period()" (changed)="stats.setPeriod($event)" />
+
+  <section class="card block">
+    <div class="hero">
+      <div>
+        <div class="hero__value">{{ formatted(s?.total ?? 0) }} <small>{{ unit }}</small></div>
+        <div class="muted">
+          {{ (m.aggregation === 'sum' ? 'detail.totalForPeriod' : 'detail.avgForPeriod') | t }}
+        </div>
+      </div>
+      @if (s?.deltaPercent !== null && s?.deltaPercent !== undefined) {
+        <div class="hero__delta" [class.hero__delta--down]="s!.deltaPercent! < 0">
+          {{ s!.deltaPercent! > 0 ? '↑' : '↓' }}{{ abs(s!.deltaPercent!) }}%
+          <div class="muted">{{ 'detail.vsPrevious' | t }}</div>
+        </div>
+      }
+    </div>
+
+    <app-bar-chart [metric]="m" [points]="points()" />
+  </section>
+
+  <section class="stats">
+    <div class="card stat">
+      <div class="muted">{{ 'detail.perDay' | t }}</div>
+      <strong>{{ formatted(s?.perDay ?? 0) }} {{ unit }}</strong>
+    </div>
+    @if (s?.bestDay) {
+      <div class="card stat">
+        <div class="muted">{{ 'detail.bestDay' | t }}</div>
+        <strong>{{ formatted(s!.bestDay!.value) }} {{ unit }}</strong>
+        <div class="muted">{{ dayLabel(s!.bestDay!.date) }}</div>
+      </div>
+    }
+    @if (s?.goalDays !== null && s?.goalDays !== undefined) {
+      <div class="card stat">
+        <div class="muted">{{ 'detail.goal' | t: { goal: m.dailyGoal ?? 0, unit: unit } }}</div>
+        <strong>{{ 'detail.goalDays' | t: { done: s!.goalDays!, total: s!.daysWithData || '—' } }}</strong>
+      </div>
+    }
+    @if (s?.streak) {
+      <div class="card stat">
+        <div class="muted">{{ 'detail.streak' | t }}</div>
+        <strong>{{ 'detail.streakDays' | t: { n: s!.streak! } }}</strong>
+      </div>
+    }
+  </section>
+}

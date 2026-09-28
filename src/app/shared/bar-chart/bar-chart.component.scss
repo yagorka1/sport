@@ -1,0 +1,50 @@
+.chart {
+  position: relative;
+  height: 150px;
+}
+
+.chart__bars {
+  display: flex;
+  align-items: flex-end;
+  gap: 2px;
+  height: 100%;
+}
+
+.chart__col {
+  flex: 1;
+  min-width: 2px;
+  height: 100%;
+  display: flex;
+  align-items: flex-end;
+}
+
+.chart__bar {
+  width: 100%;
+  min-height: 2px;
+  border-radius: 3px 3px 1px 1px;
+  transition: height 0.2s ease;
+}
+
+.chart__goal {
+  position: absolute;
+  left: 0;
+  right: 0;
+  border-top: 1px dashed #4b525f;
+  pointer-events: none;
+
+  span {
+    position: absolute;
+    right: 0;
+    top: -16px;
+    font-size: 10.5px;
+    color: var(--text-dim);
+  }
+}
+
+.chart__axis {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 7px;
+  font-size: 11px;
+  color: var(--text-dim);
+}
