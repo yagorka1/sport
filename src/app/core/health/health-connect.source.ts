@@ -1,6 +1,12 @@
-import { DailyPoint, DateRange, MetricDescriptor, Workout } from '@core/metrics/metric.model';
+import {
+  DailyPoint,
+  DateRange,
+  MetricDescriptor,
+  RouteResult,
+  Workout,
+} from '@core/metrics/metric.model';
 import { HealthSource } from './health-source';
-import { HealthConnect } from './health-connect.plugin';
+import { AccessStatus, HealthConnect } from './health-connect.plugin';
 
 /** The real source: Health Connect on Android, through our native plugin. */
 export class HealthConnectSource implements HealthSource {
@@ -26,6 +32,10 @@ export class HealthConnectSource implements HealthSource {
     return this.toMetricIds(metrics, granted);
   }
 
+  accessStatus(metrics: readonly MetricDescriptor[]): Promise<AccessStatus> {
+    return HealthConnect.accessStatus({ types: metrics.map((m) => m.healthType) });
+  }
+
   async readDaily(metric: MetricDescriptor, range: DateRange): Promise<DailyPoint[]> {
     const { points } = await HealthConnect.readDaily({
       type: metric.healthType,
@@ -38,7 +48,15 @@ export class HealthConnectSource implements HealthSource {
 
   async readWorkouts(range: DateRange): Promise<Workout[]> {
     const { workouts } = await HealthConnect.readWorkouts({ from: range.from, to: range.to });
-    return workouts.map((w) => ({ ...w }));
+    return workouts.map(({ hasRoute, ...w }) => ({ ...w, route: hasRoute ? 'available' : 'none' }));
+  }
+
+  async readRoute(workoutId: string): Promise<RouteResult> {
+    return HealthConnect.readRoute({ id: workoutId });
+  }
+
+  async requestRoute(workoutId: string): Promise<RouteResult> {
+    return HealthConnect.requestRoute({ id: workoutId });
   }
 
   openSettings(): Promise<void> {

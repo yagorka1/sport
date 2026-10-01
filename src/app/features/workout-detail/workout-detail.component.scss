@@ -1,0 +1,87 @@
+.head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+
+  h1 {
+    margin: 0;
+    font-size: 21px;
+  }
+}
+
+.back {
+  font-size: 22px;
+  line-height: 1;
+  color: var(--text-dim);
+}
+
+.small {
+  font-size: 12.5px;
+  margin: 0;
+}
+
+.map {
+  margin-bottom: 12px;
+
+  .notice p {
+    margin: 0 0 10px;
+  }
+}
+
+.block {
+  padding: 15px;
+  margin-bottom: 12px;
+
+  h2 {
+    margin: 0 0 12px;
+    font-size: 15px;
+  }
+}
+
+.facts {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  gap: 14px 12px;
+}
+
+.fact {
+  display: grid;
+  gap: 2px;
+  font-size: 12.5px;
+
+  strong {
+    font-size: 17px;
+  }
+}
+
+.chart {
+  display: block;
+  margin-top: 16px;
+}
+
+.laps {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13.5px;
+  font-variant-numeric: tabular-nums;
+
+  th {
+    text-align: left;
+    font-weight: 500;
+    font-size: 12px;
+    color: var(--text-dim);
+    padding: 0 0 6px;
+  }
+
+  td {
+    padding: 6px 0;
+    border-top: 1px solid var(--border);
+  }
+}
+
+.notes {
+  margin: 0 0 10px;
+  font-size: 14px;
+  white-space: pre-line;
+}

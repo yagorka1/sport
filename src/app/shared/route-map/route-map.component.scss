@@ -1,0 +1,38 @@
+// Leaflet's own stylesheet, scoped to this lazy chunk (see the component's comment).
+@use 'leaflet/dist/leaflet';
+
+app-route-map {
+  display: block;
+}
+
+.route-map {
+  height: 340px;
+  border-radius: var(--radius);
+  overflow: hidden;
+  background: var(--surface-2);
+
+  // The light OSM tiles would glare inside the dark UI: invert them into a dim map.
+  // Only the tile pane is filtered, so the track keeps its real colors.
+  .leaflet-tile-pane {
+    filter: invert(1) hue-rotate(180deg) brightness(0.85) contrast(0.9) saturate(0.4);
+  }
+
+  .leaflet-control-attribution {
+    background: rgb(23 26 33 / 80%);
+    color: var(--text-dim);
+
+    a {
+      color: var(--text-dim);
+    }
+  }
+
+  .leaflet-bar a {
+    background: var(--surface);
+    color: var(--text);
+    border-bottom-color: var(--border);
+  }
+}
+
+.route-map__error {
+  margin-top: 10px;
+}

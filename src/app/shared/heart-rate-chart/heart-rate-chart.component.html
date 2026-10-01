@@ -1,0 +1,33 @@
+<div class="hr">
+  <div class="hr__plot">
+    @for (tick of yAxis(); track tick.label) {
+      <div class="hr__grid" [style.bottom.%]="tick.at">
+        <span>{{ tick.label }}</span>
+      </div>
+    }
+    <svg
+      class="hr__svg"
+      [attr.viewBox]="'0 0 ' + width + ' ' + height"
+      preserveAspectRatio="none"
+      aria-hidden="true"
+    >
+      <defs>
+        <linearGradient id="hr-fill" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#e0555f" stop-opacity="0.35" />
+          <stop offset="1" stop-color="#e0555f" stop-opacity="0" />
+        </linearGradient>
+      </defs>
+      @for (area of areas(); track $index) {
+        <path [attr.d]="area" fill="url(#hr-fill)" />
+      }
+      @for (points of segments(); track $index) {
+        <polyline [attr.points]="points" class="hr__line" />
+      }
+    </svg>
+  </div>
+  <div class="hr__x">
+    @for (tick of xAxis(); track tick.at) {
+      <span [style.left.%]="tick.at">{{ tick.label }}</span>
+    }
+  </div>
+</div>

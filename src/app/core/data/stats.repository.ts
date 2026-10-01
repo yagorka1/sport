@@ -13,5 +13,6 @@ export interface StatsRepository {
   loadWorkouts(range: DateRange): Promise<Workout[]>;
   saveWorkouts(workouts: readonly Workout[]): Promise<void>;
   lastSyncAt(): Promise<string | null>;
-  markSynced(at: string): Promise<void>;
+  syncSchema(): Promise<number>;
+  markSynced(at: string, syncSchema: number): Promise<void>;
 }

@@ -67,10 +67,43 @@ export const en: Dictionary = {
     other: '{n} workouts',
   },
   'workouts.pace': '{pace} /km',
+  'workouts.showMap': 'Map',
+  'workouts.allTypes': 'All',
+  'workouts.sortBy': 'Sort by',
+  'workouts.sort.date': 'Newest first',
+  'workouts.sort.duration': 'Longest time',
+  'workouts.sort.distance': 'Longest distance',
+  'workouts.sort.calories': 'Most calories',
+
+  'details.section.main': 'Workout',
+  'details.section.energy': 'Energy',
+  'details.section.heart': 'Heart rate',
+  'details.section.power': 'Power',
+  'details.section.laps': 'Laps',
+  'details.time': 'Time',
+  'details.avgSpeed': 'Average speed',
+  'details.maxSpeed': 'Max speed',
+  'details.cadence': 'Cadence',
+  'details.elevationGain': 'Elevation gain',
+  'details.activeCalories': 'Active',
+  'details.totalCalories': 'Total',
+  'details.avg': 'Average',
+  'details.min': 'Minimum',
+  'details.max': 'Maximum',
+  'details.lapDistance': 'Distance',
+  'details.notes': 'Notes',
+  'details.source': 'Recorded in {app}',
+  'workouts.routesNotSynced':
+    'Routes for these workouts have not been loaded yet. Install the new app version on your ' +
+    'phone and sync — the first sync re-reads the whole history, maps included.',
 
   'unit.km': 'km',
   'unit.kcal': 'kcal',
   'unit.bpm': 'bpm',
+  'unit.kmh': 'km/h',
+  'unit.m': 'm',
+  'unit.spm': 'spm',
+  'unit.w': 'W',
 
   'duration.hoursMinutes': '{h} h {m} min',
   'duration.minutes': '{m} min',
@@ -86,15 +119,27 @@ export const en: Dictionary = {
   'settings.unavailable':
     'Health Connect was not found on this device. Install it from Google Play (on Android 14+ ' +
     'it is built into the system).',
+  'settings.historyHint':
+    'Health Connect currently returns only the month before access was first granted. ' +
+    'Allow history access to load everything stored on the phone.',
+  'settings.missingHint':
+    'Some workout data is unavailable: heart rate, speed, elevation, cadence or routes. ' +
+    'Grant the missing permissions and the history will be re-read with them.',
+  'settings.grantMissing': 'Grant missing permissions',
   'settings.healthConnectSettings': 'Health Connect settings',
   'settings.sync': 'Sync',
   'settings.lastSync': 'Last sync',
   'settings.neverSynced': 'never',
   'settings.syncNow': 'Sync now',
-  'settings.resyncYear': 'Re-read the whole year',
+  'settings.resyncAll': 'Re-read all history',
   'settings.syncMobileOnly':
     'Only available in the Android app: Health Connect is on-device storage and cannot be read ' +
     'from a browser. The website shows whatever the phone has synced.',
+  'settings.goals': 'Daily goals',
+  'settings.goalsHint':
+    'Goals show up on charts and in streaks. They are saved to your account, so the phone and ' +
+    'the website agree.',
+  'settings.goalReset': 'Reset to default',
   'settings.metrics': 'Metrics',
   'settings.metricsHint.definedIn': 'The set is defined in',
   'settings.metricsHint.enable': '. To turn on a disabled metric, set',
@@ -119,7 +164,26 @@ export const en: Dictionary = {
   'sync.savingDays': 'Saving days…',
   'sync.readingWorkouts': 'Reading workouts…',
   'sync.done': 'Done. Days: {days}, workouts: {workouts} ({from} — {to})',
+  'sync.readingRoutes': {
+    one: 'Loading {n} route…',
+    other: 'Loading {n} routes…',
+  },
   'sync.failed': 'Sync failed',
+
+  'route.duration': 'Duration',
+  'route.pace': 'Pace',
+  'route.heartRate': 'Heart rate avg / max',
+  'route.none': 'This workout has no GPS route.',
+  'route.consentNeeded': 'Health Connect has a route for this workout, but access to it must be allowed.',
+  'route.allow': 'Allow access to the route',
+  'route.consentOnPhone':
+    'Open this workout in the app on your phone and allow access — the map will then show up ' +
+    'here as well.',
+  'route.declined': 'Access to the route was not granted.',
+  'route.loadFailed': 'Failed to load the route',
+  'route.mapFailed': 'Failed to load the map. Check your internet connection and reopen the workout.',
+  'route.notFound': 'Workout not found.',
+  'route.toWorkouts': 'Back to workouts',
 
   'stats.loadFailed': 'Failed to load statistics',
 

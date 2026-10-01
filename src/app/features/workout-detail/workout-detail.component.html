@@ -1,0 +1,94 @@
+@if (workout.isLoading()) {
+  <p class="muted">{{ 'common.loading' | t }}</p>
+} @else if (workout.value(); as w) {
+  <header class="head">
+    <a routerLink="/workouts" class="back">←</a>
+    <div>
+      <h1>{{ title(w) }}</h1>
+      <div class="muted small">{{ when(w) }}</div>
+    </div>
+  </header>
+
+  <section class="map">
+    @if (route.isLoading()) {
+      <p class="muted">{{ 'common.loading' | t }}</p>
+    } @else if (route.error()) {
+      <div class="notice notice--error">{{ 'route.loadFailed' | t }}</div>
+    } @else if (routePoints(); as points) {
+      <app-route-map [points]="points" />
+    } @else if (route.value()?.status === 'consent') {
+      <div class="notice">
+        <p>{{ 'route.consentNeeded' | t }}</p>
+        @if (stats.canRequestRoute()) {
+          <button class="btn btn--primary" [disabled]="requesting()" (click)="allowRoute(w)">
+            {{ 'route.allow' | t }}
+          </button>
+        } @else {
+          <p class="muted">{{ 'route.consentOnPhone' | t }}</p>
+        }
+        @if (requestError(); as error) {
+          <p class="muted">{{ error | t }}</p>
+        }
+      </div>
+    }
+  </section>
+
+  @for (section of sections(); track section.title) {
+    <section class="card block">
+      <h2>{{ section.title | t }}</h2>
+      <div class="facts">
+        @for (fact of section.facts; track fact.label) {
+          <div class="fact">
+            <span class="muted">{{ fact.label | t }}</span>
+            <strong>{{ fact.value }}</strong>
+          </div>
+        }
+      </div>
+      @if (section.title === 'details.section.heart' && heartRate(); as series) {
+        <app-heart-rate-chart class="chart" [series]="series" />
+      }
+    </section>
+  }
+
+  @if (laps().length > 1) {
+    <section class="card block">
+      <h2>{{ 'details.section.laps' | t }}</h2>
+      <table class="laps">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>{{ 'details.lapDistance' | t }}</th>
+            <th>{{ 'route.duration' | t }}</th>
+            <th>{{ 'route.pace' | t }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (lap of laps(); track $index) {
+            <tr>
+              <td class="muted">{{ $index + 1 }}</td>
+              <td>{{ lapLength(lap) }}</td>
+              <td>{{ lapDuration(lap) }}</td>
+              <td>{{ lapPace(lap) }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </section>
+  }
+
+  @if (w.notes || source(w)) {
+    <section class="card block">
+      @if (w.notes) {
+        <h2>{{ 'details.notes' | t }}</h2>
+        <p class="notes">{{ w.notes }}</p>
+      }
+      @if (source(w); as app) {
+        <p class="muted small">{{ 'details.source' | t: { app: app } }}</p>
+      }
+    </section>
+  }
+} @else {
+  <p class="muted">
+    {{ 'route.notFound' | t }} <a routerLink="/workouts">{{ 'route.toWorkouts' | t }}</a>
+  </p>
+}

@@ -67,10 +67,43 @@ export const ru = {
   'workouts.empty': 'За выбранный период тренировок нет.',
   'workouts.count': '{n} шт',
   'workouts.pace': '{pace} /км',
+  'workouts.showMap': 'Карта',
+  'workouts.allTypes': 'Все',
+  'workouts.sortBy': 'Сортировка',
+  'workouts.sort.date': 'Сначала новые',
+  'workouts.sort.duration': 'Самые долгие',
+  'workouts.sort.distance': 'Самые длинные',
+  'workouts.sort.calories': 'Больше калорий',
+
+  'details.section.main': 'Тренировка',
+  'details.section.energy': 'Энергия',
+  'details.section.heart': 'Пульс',
+  'details.section.power': 'Мощность',
+  'details.section.laps': 'Круги',
+  'details.time': 'Время',
+  'details.avgSpeed': 'Средняя скорость',
+  'details.maxSpeed': 'Макс. скорость',
+  'details.cadence': 'Каденс',
+  'details.elevationGain': 'Набор высоты',
+  'details.activeCalories': 'Активные',
+  'details.totalCalories': 'Всего',
+  'details.avg': 'Средний',
+  'details.min': 'Минимум',
+  'details.max': 'Максимум',
+  'details.lapDistance': 'Дистанция',
+  'details.notes': 'Заметки',
+  'details.source': 'Записано в {app}',
+  'workouts.routesNotSynced':
+    'Маршруты для этих тренировок ещё не загружены. Установите новую версию приложения на ' +
+    'телефон и синхронизируйте — первая синхронизация перечитает всю историю вместе с картами.',
 
   'unit.km': 'км',
   'unit.kcal': 'ккал',
   'unit.bpm': 'уд/мин',
+  'unit.kmh': 'км/ч',
+  'unit.m': 'м',
+  'unit.spm': 'шаг/мин',
+  'unit.w': 'Вт',
 
   'duration.hoursMinutes': '{h} ч {m} мин',
   'duration.minutes': '{m} мин',
@@ -86,15 +119,26 @@ export const ru = {
   'settings.unavailable':
     'Health Connect не найден на устройстве. Установите его из Google Play (на Android 14+ ' +
     'он встроен в систему).',
+  'settings.historyHint':
+    'Сейчас Health Connect отдаёт данные только за последний месяц до первой выдачи доступа. ' +
+    'Разрешите чтение истории, чтобы загрузить всё, что есть на телефоне.',
+  'settings.missingHint':
+    'Часть данных тренировок недоступна: пульс, скорость, высота, каденс или маршруты. ' +
+    'Выдайте недостающие разрешения — история перечитается с ними.',
+  'settings.grantMissing': 'Выдать недостающие разрешения',
   'settings.healthConnectSettings': 'Настройки Health Connect',
   'settings.sync': 'Синхронизация',
   'settings.lastSync': 'Последний синк',
   'settings.neverSynced': 'ещё не было',
   'settings.syncNow': 'Синхронизировать',
-  'settings.resyncYear': 'Перечитать год заново',
+  'settings.resyncAll': 'Перечитать всю историю',
   'settings.syncMobileOnly':
     'Доступна только в Android-приложении: Health Connect — локальное хранилище телефона, ' +
     'из браузера его не прочитать. Сайт показывает то, что синхронизировала мобилка.',
+  'settings.goals': 'Цели на день',
+  'settings.goalsHint':
+    'Цели видны на графиках и в сериях. Сохраняются в аккаунте — одинаковые на телефоне и на сайте.',
+  'settings.goalReset': 'Вернуть по умолчанию',
   'settings.metrics': 'Метрики',
   'settings.metricsHint.definedIn': 'Набор задан в',
   'settings.metricsHint.enable': '. Чтобы включить выключенную метрику — поставьте',
@@ -117,7 +161,23 @@ export const ru = {
   'sync.savingDays': 'Сохраняю дни…',
   'sync.readingWorkouts': 'Читаю тренировки…',
   'sync.done': 'Готово. Дней: {days}, тренировок: {workouts} ({from} — {to})',
+  'sync.readingRoutes': 'Загружаю маршруты: {n}…',
   'sync.failed': 'Ошибка синхронизации',
+
+  'route.duration': 'Время',
+  'route.pace': 'Темп',
+  'route.heartRate': 'Пульс ср. / макс.',
+  'route.none': 'У этой тренировки нет GPS-маршрута.',
+  'route.consentNeeded': 'Маршрут есть в Health Connect, но нужно разрешить доступ к нему.',
+  'route.allow': 'Разрешить доступ к маршруту',
+  'route.consentOnPhone':
+    'Откройте эту тренировку в приложении на телефоне и разрешите доступ — после этого карта ' +
+    'появится и здесь.',
+  'route.declined': 'Доступ к маршруту не выдан.',
+  'route.loadFailed': 'Не удалось загрузить маршрут',
+  'route.mapFailed': 'Не удалось загрузить карту. Проверьте интернет и откройте тренировку снова.',
+  'route.notFound': 'Тренировка не найдена.',
+  'route.toWorkouts': 'К тренировкам',
 
   'stats.loadFailed': 'Не удалось загрузить статистику',
 

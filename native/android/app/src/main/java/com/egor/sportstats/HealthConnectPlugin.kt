@@ -4,16 +4,26 @@ import android.content.Intent
 import android.os.Build
 import androidx.activity.result.ActivityResult
 import androidx.health.connect.client.HealthConnectClient
+import androidx.health.connect.client.HealthConnectFeatures
 import androidx.health.connect.client.PermissionController
 import androidx.health.connect.client.aggregate.AggregateMetric
+import androidx.health.connect.client.contracts.ExerciseRouteRequestContract
 import androidx.health.connect.client.permission.HealthPermission
 import androidx.health.connect.client.records.ActiveCaloriesBurnedRecord
 import androidx.health.connect.client.records.DistanceRecord
+import androidx.health.connect.client.records.ElevationGainedRecord
+import androidx.health.connect.client.records.ExerciseRoute
+import androidx.health.connect.client.records.ExerciseRouteResult
 import androidx.health.connect.client.records.ExerciseSessionRecord
 import androidx.health.connect.client.records.HeartRateRecord
+import androidx.health.connect.client.records.PowerRecord
+import androidx.health.connect.client.records.Record
 import androidx.health.connect.client.records.RestingHeartRateRecord
 import androidx.health.connect.client.records.SleepSessionRecord
+import androidx.health.connect.client.records.SpeedRecord
+import androidx.health.connect.client.records.StepsCadenceRecord
 import androidx.health.connect.client.records.StepsRecord
+import androidx.health.connect.client.records.TotalCaloriesBurnedRecord
 import androidx.health.connect.client.records.WeightRecord
 import androidx.health.connect.client.request.AggregateGroupByPeriodRequest
 import androidx.health.connect.client.request.AggregateRequest
@@ -34,6 +44,7 @@ import java.time.Duration
 import java.time.LocalDate
 import java.time.Period
 import java.time.format.DateTimeFormatter
+import kotlin.reflect.KClass
 
 /**
  * Bridge to Health Connect.
@@ -143,10 +154,14 @@ class HealthConnectPlugin : Plugin() {
     @PluginMethod
     override fun requestPermissions(call: PluginCall) {
         val requested = requestedTypes(call)
-        if (client == null) return call.reject("Health Connect is not available")
+        val healthClient = client ?: return call.reject("Health Connect is not available")
 
-        val permissions = requested.mapNotNull { recordTypes[it]?.permission }.toSet()
-        if (permissions.isEmpty()) return call.reject("Unknown data types: $requested")
+        val metricPermissions = requested.mapNotNull { recordTypes[it]?.permission }.toSet()
+        if (metricPermissions.isEmpty()) return call.reject("Unknown data types: $requested")
+
+        // Workout details, history and routes ride along with every request, so a user who
+        // granted the metrics earlier gets a dialog with just the missing permissions.
+        val permissions = metricPermissions + extraPermissions(healthClient)
 
         // Health Connect grants permissions only through its own system screen.
         val intent = PermissionController.createRequestPermissionResultContract()
@@ -164,6 +179,38 @@ class HealthConnectPlugin : Plugin() {
             try {
                 val granted = healthClient.permissionController.getGrantedPermissions()
                 call.resolve(grantedResult(requestedTypes(call), granted))
+            } catch (e: Exception) {
+                call.reject(e.message ?: "Failed to read permissions", e)
+            }
+        }
+    }
+
+    /**
+     * history: whether data older than 30 days before the first grant is readable —
+     * "granted", "denied", or "unsupported" when this Health Connect version lacks the feature.
+     * complete: everything requestPermissions would ask for (the given metric types plus the
+     * extras) is granted; false means a new request would show something.
+     */
+    @PluginMethod
+    fun accessStatus(call: PluginCall) {
+        val requested = requestedTypes(call)
+        val healthClient = client ?: return call.reject("Health Connect is not available")
+
+        scope.launch {
+            try {
+                val granted = healthClient.permissionController.getGrantedPermissions()
+                val history = when {
+                    !historySupported(healthClient) -> "unsupported"
+                    HISTORY_PERMISSION in granted -> "granted"
+                    else -> "denied"
+                }
+                val wanted = requested.mapNotNull { recordTypes[it]?.permission }.toSet() +
+                    extraPermissions(healthClient)
+
+                val result = JSObject()
+                result.put("history", history)
+                result.put("complete", granted.containsAll(wanted))
+                call.resolve(result)
             } catch (e: Exception) {
                 call.reject(e.message ?: "Failed to read permissions", e)
             }
@@ -229,6 +276,9 @@ class HealthConnectPlugin : Plugin() {
                     to.plusDays(1).atStartOfDay(),
                 )
 
+                // Read once: each session aggregates only what is actually granted.
+                val granted = healthClient.permissionController.getGrantedPermissions()
+
                 val workouts = JSArray()
                 // readRecords returns at most one page, so walk the pageToken chain:
                 // a year of workouts easily exceeds a single page.
@@ -242,7 +292,7 @@ class HealthConnectPlugin : Plugin() {
                         ),
                     )
                     for (session in page.records) {
-                        workouts.put(describeSession(healthClient, session))
+                        workouts.put(describeSession(healthClient, session, granted))
                     }
                     pageToken = page.pageToken
                 } while (pageToken != null)
@@ -254,6 +304,60 @@ class HealthConnectPlugin : Plugin() {
                 call.reject(e.message ?: "Failed to read workouts", e)
             }
         }
+    }
+
+    /**
+     * GPS route of one session: { status: "data", points: [[lat, lon], ...] }, or
+     * { status: "consent" } when the user has to allow this route, or { status: "none" }.
+     * Routes come only from reading a single record; readRecords leaves them out.
+     */
+    @PluginMethod
+    fun readRoute(call: PluginCall) {
+        val id = call.getString("id") ?: return call.reject("Missing id")
+        val healthClient = client ?: return call.reject("Health Connect is not available")
+
+        scope.launch {
+            try {
+                val session = healthClient.readRecord(ExerciseSessionRecord::class, id).record
+                val result = JSObject()
+                when (val route = session.exerciseRouteResult) {
+                    is ExerciseRouteResult.Data -> {
+                        result.put("status", "data")
+                        result.put("points", routePoints(route.exerciseRoute))
+                    }
+                    is ExerciseRouteResult.ConsentRequired -> result.put("status", "consent")
+                    else -> result.put("status", "none")
+                }
+                call.resolve(result)
+            } catch (e: Exception) {
+                call.reject(e.message ?: "Failed to read route", e)
+            }
+        }
+    }
+
+    /** Asks the user, through the Health Connect screen, to share the route of one session. */
+    @PluginMethod
+    fun requestRoute(call: PluginCall) {
+        val id = call.getString("id") ?: return call.reject("Missing id")
+        if (client == null) return call.reject("Health Connect is not available")
+
+        val intent = ExerciseRouteRequestContract().createIntent(context, id)
+        startActivityForResult(call, intent, "routeResult")
+    }
+
+    @ActivityCallback
+    private fun routeResult(call: PluginCall?, result: ActivityResult) {
+        if (call == null) return
+        val route = ExerciseRouteRequestContract().parseResult(result.resultCode, result.data)
+        val response = JSObject()
+        if (route == null) {
+            // Declined, or the session turned out to have no route.
+            response.put("status", "none")
+        } else {
+            response.put("status", "data")
+            response.put("points", routePoints(route))
+        }
+        call.resolve(response)
     }
 
     @PluginMethod
@@ -276,19 +380,22 @@ class HealthConnectPlugin : Plugin() {
     private suspend fun describeSession(
         healthClient: HealthConnectClient,
         session: ExerciseSessionRecord,
+        granted: Set<String>,
     ): JSObject {
         val range = TimeRangeFilter.between(session.startTime, session.endTime)
-        val metrics = setOf(
-            ActiveCaloriesBurnedRecord.ACTIVE_CALORIES_TOTAL,
-            DistanceRecord.DISTANCE_TOTAL,
-            HeartRateRecord.BPM_AVG,
-            HeartRateRecord.BPM_MAX,
-        )
 
-        // Some of these may lack permission — in that case we just leave nulls.
-        val aggregate = runCatching {
-            healthClient.aggregate(AggregateRequest(metrics = metrics, timeRangeFilter = range))
-        }.getOrNull()
+        // One ungranted metric makes the whole aggregate request fail, so ask only for what
+        // is granted; the rest stays null.
+        val metrics = SESSION_METRICS
+            .filterKeys { HealthPermission.getReadPermission(it) in granted }
+            .values.flatten().toSet()
+        val aggregate = if (metrics.isEmpty()) {
+            null
+        } else {
+            runCatching {
+                healthClient.aggregate(AggregateRequest(metrics = metrics, timeRangeFilter = range))
+            }.getOrNull()
+        }
 
         val workout = JSObject()
         workout.put("id", session.metadata.id)
@@ -302,11 +409,120 @@ class HealthConnectPlugin : Plugin() {
             "calories",
             aggregate?.get(ActiveCaloriesBurnedRecord.ACTIVE_CALORIES_TOTAL)?.inKilocalories,
         )
+        workout.putNullable(
+            "totalCalories",
+            aggregate?.get(TotalCaloriesBurnedRecord.ENERGY_TOTAL)?.inKilocalories,
+        )
         workout.putNullable("distanceM", aggregate?.get(DistanceRecord.DISTANCE_TOTAL)?.inMeters)
+        workout.putNullable("steps", aggregate?.get(StepsRecord.COUNT_TOTAL))
         workout.putNullable("avgHeartRate", aggregate?.get(HeartRateRecord.BPM_AVG))
+        workout.putNullable("minHeartRate", aggregate?.get(HeartRateRecord.BPM_MIN))
         workout.putNullable("maxHeartRate", aggregate?.get(HeartRateRecord.BPM_MAX))
+        workout.putNullable("avgSpeedMps", aggregate?.get(SpeedRecord.SPEED_AVG)?.inMetersPerSecond)
+        workout.putNullable("maxSpeedMps", aggregate?.get(SpeedRecord.SPEED_MAX)?.inMetersPerSecond)
+        workout.putNullable(
+            "elevationGainM",
+            aggregate?.get(ElevationGainedRecord.ELEVATION_GAINED_TOTAL)?.inMeters,
+        )
+        workout.putNullable("avgCadence", aggregate?.get(StepsCadenceRecord.RATE_AVG))
+        workout.putNullable("avgPowerW", aggregate?.get(PowerRecord.POWER_AVG)?.inWatts)
+        workout.putNullable("maxPowerW", aggregate?.get(PowerRecord.POWER_MAX)?.inWatts)
+        workout.putNullable("notes", session.notes?.takeIf { it.isNotBlank() })
+        workout.put("laps", describeLaps(session))
+        workout.putNullable(
+            "heartRate",
+            if (HEART_RATE_PERMISSION in granted) heartRateSeries(healthClient, session) else null,
+        )
         workout.put("source", session.metadata.dataOrigin.packageName)
+        // The route itself is read on demand (readRoute): a year of GPS tracks would make
+        // this response huge. Here we only say whether there is one.
+        workout.put("hasRoute", session.exerciseRouteResult !is ExerciseRouteResult.NoData)
         return workout
+    }
+
+    private fun describeLaps(session: ExerciseSessionRecord): JSArray {
+        val laps = JSArray()
+        for (lap in session.laps) {
+            val item = JSObject()
+            item.put("durationSec", Duration.between(lap.startTime, lap.endTime).seconds)
+            item.putNullable("lengthM", lap.length?.inMeters)
+            laps.put(item)
+        }
+        return laps
+    }
+
+    /**
+     * Heart rate over the session, averaged into at most HR_MAX_POINTS buckets — raw samples
+     * come every second or so, far more than a chart needs or a Firestore document should hold.
+     * Buckets without samples are null, so the chart shows a gap rather than a fake line.
+     */
+    private suspend fun heartRateSeries(
+        healthClient: HealthConnectClient,
+        session: ExerciseSessionRecord,
+    ): JSObject? {
+        val durationSec = Duration.between(session.startTime, session.endTime).seconds
+        if (durationSec <= 0) return null
+        val stepSec = maxOf(HR_MIN_STEP_SEC, (durationSec + HR_MAX_POINTS - 1) / HR_MAX_POINTS)
+        val bucketCount = ((durationSec + stepSec - 1) / stepSec).toInt()
+        val sums = LongArray(bucketCount)
+        val counts = IntArray(bucketCount)
+
+        var pageToken: String? = null
+        do {
+            val page = runCatching {
+                healthClient.readRecords(
+                    ReadRecordsRequest(
+                        recordType = HeartRateRecord::class,
+                        timeRangeFilter = TimeRangeFilter.between(session.startTime, session.endTime),
+                        pageToken = pageToken,
+                    ),
+                )
+            }.getOrNull() ?: return null
+            for (record in page.records) {
+                for (sample in record.samples) {
+                    val offset = Duration.between(session.startTime, sample.time).seconds
+                    val bucket = (offset / stepSec).toInt()
+                    if (bucket in 0 until bucketCount) {
+                        sums[bucket] += sample.beatsPerMinute
+                        counts[bucket]++
+                    }
+                }
+            }
+            pageToken = page.pageToken
+        } while (pageToken != null)
+
+        if (counts.all { it == 0 }) return null
+
+        val bpm = JSArray()
+        for (i in 0 until bucketCount) {
+            if (counts[i] == 0) bpm.put(JSONObject.NULL) else bpm.put(sums[i] / counts[i])
+        }
+        val series = JSObject()
+        series.put("stepSec", stepSec)
+        series.put("bpm", bpm)
+        return series
+    }
+
+    /**
+     * Permissions beyond the metrics: workout details, history and routes. Each is asked for
+     * only where this Health Connect / Android version knows it.
+     */
+    private fun extraPermissions(healthClient: HealthConnectClient): Set<String> = buildSet {
+        SESSION_METRICS.keys.forEach { add(HealthPermission.getReadPermission(it)) }
+        add(HEART_RATE_PERMISSION)
+        if (historySupported(healthClient)) add(HISTORY_PERMISSION)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM) add(ROUTES_PERMISSION)
+    }
+
+    private fun routePoints(route: ExerciseRoute): JSArray {
+        val points = JSArray()
+        for (location in route.route) {
+            val point = JSArray()
+            point.put(location.latitude)
+            point.put(location.longitude)
+            points.put(point)
+        }
+        return points
     }
 
     /**
@@ -336,6 +552,11 @@ class HealthConnectPlugin : Plugin() {
         return result
     }
 
+    private fun historySupported(healthClient: HealthConnectClient): Boolean =
+        healthClient.features.getFeatureStatus(
+            HealthConnectFeatures.FEATURE_READ_HEALTH_DATA_HISTORY,
+        ) == HealthConnectFeatures.FEATURE_STATUS_AVAILABLE
+
     private fun parseDate(value: String?): LocalDate? =
         value?.let { runCatching { LocalDate.parse(it, DAY_FORMAT) }.getOrNull() }
 
@@ -343,6 +564,41 @@ class HealthConnectPlugin : Plugin() {
 
     private companion object {
         val DAY_FORMAT: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
+
+        const val HISTORY_PERMISSION = HealthPermission.PERMISSION_READ_HEALTH_DATA_HISTORY
+
+        val HEART_RATE_PERMISSION = HealthPermission.getReadPermission(HeartRateRecord::class)
+
+        /** What is aggregated over a session's interval, keyed by the record type it needs. */
+        val SESSION_METRICS: Map<KClass<out Record>, Set<AggregateMetric<*>>> = mapOf(
+            ActiveCaloriesBurnedRecord::class to setOf(ActiveCaloriesBurnedRecord.ACTIVE_CALORIES_TOTAL),
+            TotalCaloriesBurnedRecord::class to setOf(TotalCaloriesBurnedRecord.ENERGY_TOTAL),
+            DistanceRecord::class to setOf(DistanceRecord.DISTANCE_TOTAL),
+            StepsRecord::class to setOf(StepsRecord.COUNT_TOTAL),
+            HeartRateRecord::class to setOf(
+                HeartRateRecord.BPM_AVG,
+                HeartRateRecord.BPM_MIN,
+                HeartRateRecord.BPM_MAX,
+            ),
+            SpeedRecord::class to setOf(SpeedRecord.SPEED_AVG, SpeedRecord.SPEED_MAX),
+            ElevationGainedRecord::class to setOf(ElevationGainedRecord.ELEVATION_GAINED_TOTAL),
+            StepsCadenceRecord::class to setOf(StepsCadenceRecord.RATE_AVG),
+            PowerRecord::class to setOf(PowerRecord.POWER_AVG, PowerRecord.POWER_MAX),
+        )
+
+        /** Heart-rate chart resolution: at most this many points per workout... */
+        const val HR_MAX_POINTS = 240L
+
+        /** ...and never finer than this, since samples rarely come more often. */
+        const val HR_MIN_STEP_SEC = 5L
+
+        /**
+         * Lets routes written by other apps be read without a per-session prompt. A platform
+         * permission of Android 15+; connect-client 1.1.0 has no constant or feature flag for
+         * it, hence the literal and the SDK check. Without it every route other than our own
+         * comes back as ConsentRequired and goes through requestRoute.
+         */
+        const val ROUTES_PERMISSION = "android.permission.health.READ_EXERCISE_ROUTES"
 
         const val HEALTH_CONNECT_SETTINGS_ACTION =
             "androidx.health.ACTION_HEALTH_CONNECT_SETTINGS"
