@@ -1,0 +1,4 @@
+<div class="route-map" #map></div>
+@if (failed()) {
+  <div class="notice notice--error route-map__error">{{ 'route.mapFailed' | t }}</div>
+}

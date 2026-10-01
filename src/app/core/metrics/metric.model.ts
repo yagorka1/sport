@@ -61,7 +61,53 @@ export interface Workout {
   readonly maxHeartRate: number | null;
   /** Writing app package, e.g. 'com.google.android.apps.fitness'. */
   readonly source: string | null;
+  /** Absent on workouts synced before routes were supported — treat as 'none'. */
+  readonly route?: RouteStatus;
+
+  // Details below are absent on workouts synced by older versions and null when the source
+  // did not record them (or access to that data type was not granted).
+  /** Active plus resting energy over the session, kcal. */
+  readonly totalCalories?: number | null;
+  readonly steps?: number | null;
+  readonly minHeartRate?: number | null;
+  readonly avgSpeedMps?: number | null;
+  readonly maxSpeedMps?: number | null;
+  readonly elevationGainM?: number | null;
+  /** Steps per minute. */
+  readonly avgCadence?: number | null;
+  readonly avgPowerW?: number | null;
+  readonly maxPowerW?: number | null;
+  readonly notes?: string | null;
+  readonly laps?: readonly WorkoutLap[];
+  readonly heartRate?: HeartRateSeries | null;
 }
+
+export interface WorkoutLap {
+  readonly durationSec: number;
+  readonly lengthM: number | null;
+}
+
+/** Heart rate averaged into equal buckets from the start of the session; null = no samples. */
+export interface HeartRateSeries {
+  readonly stepSec: number;
+  readonly bpm: readonly (number | null)[];
+}
+
+/**
+ * Whether a workout has a GPS route we can show:
+ *   'available' — stored in Firestore (or readable from the source when there is no Firestore);
+ *   'consent'   — Health Connect has one, but the user must allow access to this particular route;
+ *   'none'      — no route (strength training, treadmill, or no GPS recorded).
+ */
+export type RouteStatus = 'available' | 'consent' | 'none';
+
+/** [latitude, longitude] in degrees. */
+export type LatLng = readonly [number, number];
+
+export type RouteResult =
+  | { readonly status: 'data'; readonly points: readonly LatLng[] }
+  | { readonly status: 'consent' }
+  | { readonly status: 'none' };
 
 export interface DateRange {
   /** Inclusive, YYYY-MM-DD. */

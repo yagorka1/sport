@@ -4,6 +4,7 @@ import { MetricDescriptor, MetricId } from '@core/metrics/metric.model';
 import { activeMetrics } from '@core/metrics/metric.registry';
 import { HealthSource } from './health-source';
 import { HealthConnectSource } from './health-connect.source';
+import { HistoryAccess } from './health-connect.plugin';
 import { DemoSource } from './demo.source';
 
 export type HealthStatus = 'checking' | 'ready' | 'needs-permission' | 'unavailable' | 'demo';
@@ -22,6 +23,9 @@ export class HealthService {
 
   readonly status = signal<HealthStatus>('checking');
   readonly granted = signal<ReadonlySet<MetricId>>(new Set());
+  readonly history = signal<HistoryAccess>('unsupported');
+  /** false — a permission request would still show something (new data types, history). */
+  readonly accessComplete = signal(true);
 
   /** true when data does not come from Health Connect — the UI shows a banner. */
   get isDemo(): boolean {
@@ -42,12 +46,15 @@ export class HealthService {
 
     const granted = await this.source.grantedMetrics(activeMetrics());
     this.granted.set(granted);
+    await this.refreshAccessStatus();
     this.status.set(granted.size > 0 ? 'ready' : 'needs-permission');
   }
 
+  /** Requests the metrics and, where supported, history access in one system dialog. */
   async requestAccess(): Promise<boolean> {
     const granted = await this.source.requestAccess(activeMetrics());
     this.granted.set(granted);
+    await this.refreshAccessStatus();
     const ok = granted.size > 0;
     this.status.set(ok ? 'ready' : 'needs-permission');
     return ok;
@@ -57,6 +64,12 @@ export class HealthService {
   readableMetrics(): readonly MetricDescriptor[] {
     const granted = this.granted();
     return activeMetrics().filter((m) => granted.has(m.id));
+  }
+
+  private async refreshAccessStatus(): Promise<void> {
+    const { history, complete } = await this.source.accessStatus(activeMetrics());
+    this.history.set(history);
+    this.accessComplete.set(complete);
   }
 
   async openSystemSettings(): Promise<void> {

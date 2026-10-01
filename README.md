@@ -18,6 +18,13 @@ on-device storage with no server side. So only an Android app can read the data;
 the website shows whatever the phone has already written to Firestore.
 A browser without synced data shows demo data and clearly marks it with a banner.
 
+**How much history.** By default Health Connect lets an app read only the 30 days before
+access was first granted. The app therefore also requests `READ_HEALTH_DATA_HISTORY`
+(where the installed Health Connect supports it); with it the first or a full sync reads up
+to 10 years back, without it — one year, of which Health Connect returns about a month.
+Later syncs read everything since the previous one, with a 7-day overlap for late records,
+so Firestore keeps accumulating history even after a long break.
+
 Firestore stands in for a backend: the client talks to the database directly, and access
 is restricted by the rules in `firestore.rules` — each user can only see their own
 `users/{uid}` subtree.
@@ -25,10 +32,28 @@ is restricted by the rules in `firestore.rules` — each user can only see their
 ### Data model
 
 ```
-users/{uid}                     { lastSyncAt }
+users/{uid}                     { lastSyncAt, goals: { steps: 10000, ... } }
 users/{uid}/days/{YYYY-MM-DD}   { date, metrics: { steps: 8123, distance: 6200, ... } }
-users/{uid}/workouts/{id}       { type, title, startedAt, durationSec, calories, ... }
+users/{uid}/workouts/{id}       { type, title, startedAt, durationSec, calories, route, ... }
+users/{uid}/routes/{workoutId}  { polyline, points }
 ```
+
+`goals` holds only the daily goals the user changed in **Settings**, in display units
+(steps, kcal, km, minutes); everything else uses the defaults from `metric.registry.ts`.
+
+GPS routes are stored apart from workouts as simplified Google encoded polylines, so the
+workout list never pulls them. A workout's `route` is `available` (stored), `consent`
+(Health Connect has a route but the user must allow access to it — done from the workout
+screen in the APK) or `none`. On Android 15+ the app also requests `READ_EXERCISE_ROUTES`,
+which lets routes from other apps be read without asking per workout. The map uses
+Leaflet with OpenStreetMap tiles (untinted: a CSS filter on the tiles renders black in Android
+WebView).
+
+Each workout also carries whatever Health Connect has for its time span: total calories, steps,
+min/avg/max heart rate plus a heart-rate series (averaged into at most 240 points), average and
+max speed, elevation gain, cadence, power, laps and notes. Only granted data types are read;
+the rest stays `null`. `syncSchema` in `users/{uid}` records which sync version wrote the data:
+when a new version adds fields, the next sync re-reads the full history once.
 
 Metrics are fields inside a day document rather than separate documents: a new metric
 needs no migration, and a period of any length is read with a single query.
@@ -48,6 +73,7 @@ Versions checked against the npm and Maven registries on September 28, 2026:
 | firebase (JS SDK) | 12.19 | modular API, without `@angular/fire` |
 | @capacitor-firebase/authentication | 8.5 | native Google Sign-In for the APK |
 | androidx.health.connect:connect-client | 1.1.0 | latest stable (1.2.0 is still alpha) |
+| leaflet | 1.9.4 | workout maps; loaded lazily, types from `@types/leaflet` 1.9.22 (checked 2026-10-01) |
 
 Capacitor generates `minSdk` 24 (Android 7), but `connect-client` declares minSdk 26
 (Health Connect requires Android 8+), so `apply-native.ps1` raises it to 26 — otherwise the
@@ -74,6 +100,8 @@ npm start          # http://localhost:4200
 ```
 
 Until Firebase is configured the app runs on demo data, so you can look at the UI right away.
+Once it is configured, `npm run start:demo` still runs the UI on demo data without signing in
+(it swaps in `environment.demo.ts`) — handy for checking screens such as the workout map.
 
 ## Setting up Firebase
 

@@ -1,3 +1,4 @@
+import { signal } from '@angular/core';
 import { locale } from '@core/i18n/i18n';
 import { MetricDescriptor, MetricId } from './metric.model';
 
@@ -123,13 +124,43 @@ export const METRICS: readonly MetricDescriptor[] = [
 
 const BY_ID = new Map<MetricId, MetricDescriptor>(METRICS.map((m) => [m.id, m]));
 
-/** Metrics that take part in sync and display, in presentation order. */
-export function activeMetrics(): readonly MetricDescriptor[] {
-  return METRICS.filter((m) => m.enabled).sort((a, b) => a.order - b.order);
+/**
+ * Daily goals set by the user, in display units, on top of the defaults above. Module-level
+ * signal like the i18n state: every computed() that reads metrics re-runs when a goal changes.
+ * Owned by GoalsService, which loads and persists it.
+ */
+const goalOverrides = signal<Readonly<Record<MetricId, number>>>({});
+
+export function setGoalOverrides(goals: Readonly<Record<MetricId, number>>): void {
+  goalOverrides.set(goals);
 }
 
+/** Metrics that take part in sync and display, in presentation order, with the user's goals. */
+export function activeMetrics(): readonly MetricDescriptor[] {
+  const goals = goalOverrides();
+  return METRICS.filter((m) => m.enabled)
+    .sort((a, b) => a.order - b.order)
+    .map((m) => withGoal(m, goals));
+}
+
+/** With the user's goal applied. */
 export function findMetric(id: MetricId): MetricDescriptor | undefined {
-  return BY_ID.get(id);
+  const metric = BY_ID.get(id);
+  return metric && withGoal(metric, goalOverrides());
+}
+
+/** The built-in goal, ignoring the user's — what "reset" goes back to. */
+export function defaultGoal(id: MetricId): number | null {
+  return BY_ID.get(id)?.dailyGoal ?? null;
+}
+
+function withGoal(
+  metric: MetricDescriptor,
+  goals: Readonly<Record<MetricId, number>>,
+): MetricDescriptor {
+  // Metrics without a goal (weight, resting heart rate) stay without one.
+  const goal = goals[metric.id];
+  return metric.dailyGoal === null || goal === undefined ? metric : { ...metric, dailyGoal: goal };
 }
 
 /** Converts to display units. Raw data is always stored in Health Connect units. */

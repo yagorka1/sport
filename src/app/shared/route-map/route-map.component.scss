@@ -1,0 +1,22 @@
+// Leaflet's own stylesheet, scoped to this lazy chunk (see the component's comment).
+@use 'leaflet/dist/leaflet';
+
+app-route-map {
+  display: block;
+}
+
+.route-map {
+  height: 340px;
+  border-radius: var(--radius);
+  overflow: hidden;
+  // OSM's land color, so tiles that are still loading do not flash.
+  background: #f2efe9;
+
+  .leaflet-control-attribution a {
+    color: #33569b;
+  }
+}
+
+.route-map__error {
+  margin-top: 10px;
+}

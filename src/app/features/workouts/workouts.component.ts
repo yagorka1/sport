@@ -1,8 +1,10 @@
-import { Component, computed, inject } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
+import { RouterLink } from '@angular/router';
 import { StatsStore } from '@core/stats/stats.store';
 import { Workout } from '@core/metrics/metric.model';
 import { formatDateTime, formatDuration } from '@core/util/dates';
-import { locale } from '@core/i18n/i18n';
+import { formatKm, formatPace, hasRoute } from '@core/util/workout-format';
+import { TranslationKey } from '@core/i18n/i18n.model';
 import { TranslatePipe } from '@core/i18n/translate.pipe';
 import { workoutTitle, workoutTypeTitle } from '@core/i18n/workout-title';
 import { PeriodSwitchComponent } from '@shared/period-switch/period-switch.component';
@@ -13,14 +15,35 @@ interface TypeStat {
   readonly totalSec: number;
 }
 
+type SortKey = 'date' | 'duration' | 'distance' | 'calories';
+
+/** Descending comparators: the biggest (or newest) first. Missing values go last. */
+const SORTERS: Readonly<Record<SortKey, (a: Workout, b: Workout) => number>> = {
+  date: (a, b) => b.startedAt.localeCompare(a.startedAt),
+  duration: (a, b) => b.durationSec - a.durationSec,
+  distance: (a, b) => (b.distanceM ?? -1) - (a.distanceM ?? -1),
+  calories: (a, b) => (b.calories ?? -1) - (a.calories ?? -1),
+};
+
 @Component({
   selector: 'app-workouts',
-  imports: [PeriodSwitchComponent, TranslatePipe],
+  imports: [PeriodSwitchComponent, RouterLink, TranslatePipe],
   templateUrl: './workouts.component.html',
   styleUrl: './workouts.component.scss',
 })
 export class WorkoutsComponent {
   protected readonly stats = inject(StatsStore);
+
+  /** null — all types. */
+  protected readonly typeFilter = signal<string | null>(null);
+  protected readonly sort = signal<SortKey>('date');
+
+  protected readonly sortOptions: ReadonlyArray<{ value: SortKey; label: TranslationKey }> = [
+    { value: 'date', label: 'workouts.sort.date' },
+    { value: 'duration', label: 'workouts.sort.duration' },
+    { value: 'distance', label: 'workouts.sort.distance' },
+    { value: 'calories', label: 'workouts.sort.calories' },
+  ];
 
   protected readonly byType = computed<readonly TypeStat[]>(() => {
     const totals = new Map<string, TypeStat>();
@@ -34,6 +57,25 @@ export class WorkoutsComponent {
     }
     return [...totals.values()].sort((a, b) => b.totalSec - a.totalSec);
   });
+
+  protected readonly visible = computed<readonly Workout[]>(() => {
+    const type = this.typeFilter();
+    const list = this.stats.workouts().filter((w) => type === null || w.type === type);
+    return list.sort(SORTERS[this.sort()]);
+  });
+
+  /** Workouts synced by a version without routes have no `route` field at all. */
+  protected readonly routesNotSynced = computed(() =>
+    this.stats.workouts().some((w) => w.route === undefined),
+  );
+
+  protected toggleType(type: string): void {
+    this.typeFilter.update((current) => (current === type ? null : type));
+  }
+
+  protected setSort(event: Event): void {
+    this.sort.set((event.target as HTMLSelectElement).value as SortKey);
+  }
 
   protected title(workout: Workout): string {
     return workoutTitle(workout);
@@ -49,22 +91,18 @@ export class WorkoutsComponent {
   }
 
   protected km(meters: number): string {
-    return (meters / 1000).toLocaleString(locale(), {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    });
+    return formatKm(meters);
   }
 
   protected when(workout: Workout): string {
     return formatDateTime(workout.startedAt);
   }
 
-  /** Pace in min/km — distance sports only; it is meaningless for strength training. */
   protected pace(workout: Workout): string | null {
-    if (!workout.distanceM || workout.distanceM < 300) return null;
-    const secPerKm = workout.durationSec / (workout.distanceM / 1000);
-    const minutes = Math.floor(secPerKm / 60);
-    const seconds = Math.round(secPerKm % 60);
-    return `${minutes}:${`${seconds}`.padStart(2, '0')}`;
+    return formatPace(workout);
+  }
+
+  protected hasRoute(workout: Workout): boolean {
+    return hasRoute(workout);
   }
 }

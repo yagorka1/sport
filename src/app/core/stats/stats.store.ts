@@ -1,5 +1,12 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
-import { DailyPoint, DateRange, MetricId, Period, Workout } from '@core/metrics/metric.model';
+import {
+  DailyPoint,
+  DateRange,
+  MetricId,
+  Period,
+  RouteResult,
+  Workout,
+} from '@core/metrics/metric.model';
 import { activeMetrics, findMetric } from '@core/metrics/metric.registry';
 import { MetricSummary, fillGaps, summarize } from '@core/metrics/aggregate';
 import { HealthService } from '@core/health/health.service';
@@ -92,6 +99,47 @@ export class StatsStore {
     } finally {
       this.loading.set(false);
     }
+  }
+
+  /** From the loaded period when possible; a direct link to an older workout goes to Firestore. */
+  async loadWorkout(id: string): Promise<Workout | null> {
+    const loaded = this.workouts().find((w) => w.id === id);
+    if (loaded) return loaded;
+    return this.useFirestore() ? this.repo.loadWorkout(id) : null;
+  }
+
+  async loadRoute(workout: Workout): Promise<RouteResult> {
+    if (!this.useFirestore()) {
+      return workout.route === 'available' || workout.route === 'consent'
+        ? this.health.source.readRoute(workout.id)
+        : { status: 'none' };
+    }
+    if (workout.route === 'consent') return { status: 'consent' };
+    const points = await this.repo.loadRoute(workout.id);
+    return points ? { status: 'data', points } : { status: 'none' };
+  }
+
+  /** Only where Health Connect is at hand, i.e. in the Android app. */
+  canRequestRoute(): boolean {
+    return !this.health.isDemo && this.health.status() === 'ready';
+  }
+
+  /**
+   * Asks Health Connect for a route that needs the user's consent and, once shared, stores it
+   * so the website can show it too. A declined request leaves the status as is, to retry later.
+   */
+  async requestRoute(workout: Workout): Promise<RouteResult> {
+    const result = await this.health.source.requestRoute(workout.id);
+    if (result.status !== 'data' || result.points.length < 2) return result;
+
+    if (this.useFirestore()) {
+      await this.repo.saveRoute(workout.id, result.points);
+      await this.repo.setWorkoutRoute(workout.id, 'available');
+    }
+    this.workouts.update((list) =>
+      list.map((w) => (w.id === workout.id ? { ...w, route: 'available' } : w)),
+    );
+    return result;
   }
 
   private useFirestore(): boolean {

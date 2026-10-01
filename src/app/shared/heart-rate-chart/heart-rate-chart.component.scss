@@ -1,0 +1,65 @@
+.hr {
+  // Room on the left for the bpm labels.
+  padding-left: 30px;
+}
+
+.hr__plot {
+  position: relative;
+  height: 160px;
+}
+
+.hr__svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.hr__line {
+  fill: none;
+  stroke: #e0555f;
+  stroke-width: 2;
+  stroke-linejoin: round;
+  // Keeps the stroke 2px thick although the SVG is stretched.
+  vector-effect: non-scaling-stroke;
+}
+
+.hr__grid {
+  position: absolute;
+  left: 0;
+  right: 0;
+  border-top: 1px dashed var(--border);
+
+  span {
+    position: absolute;
+    left: -30px;
+    top: -8px;
+    width: 26px;
+    text-align: right;
+    font-size: 11px;
+    color: var(--text-dim);
+  }
+}
+
+.hr__x {
+  position: relative;
+  height: 18px;
+  margin-top: 4px;
+  font-size: 11px;
+  color: var(--text-dim);
+
+  span {
+    position: absolute;
+    transform: translateX(-50%);
+    white-space: nowrap;
+
+    &:first-child {
+      transform: none;
+    }
+
+    &:last-child {
+      transform: translateX(-100%);
+    }
+  }
+}

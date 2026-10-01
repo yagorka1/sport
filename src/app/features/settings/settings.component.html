@@ -43,6 +43,14 @@
   @if (health.status() === 'unavailable') {
     <div class="notice notice--warn">{{ 'settings.unavailable' | t }}</div>
   }
+  @if (health.status() === 'ready' && !health.accessComplete()) {
+    <p class="muted">
+      {{ (health.history() === 'denied' ? 'settings.historyHint' : 'settings.missingHint') | t }}
+    </p>
+    <button class="btn btn--primary" (click)="grantMissing()" [disabled]="running()">
+      {{ 'settings.grantMissing' | t }}
+    </button>
+  }
   @if (health.status() === 'ready') {
     <button class="btn" (click)="health.openSystemSettings()">
       {{ 'settings.healthConnectSettings' | t }}
@@ -62,7 +70,7 @@
         {{ 'settings.syncNow' | t }}
       </button>
       <button class="btn" (click)="run(true)" [disabled]="running()">
-        {{ 'settings.resyncYear' | t }}
+        {{ 'settings.resyncAll' | t }}
       </button>
     </div>
   } @else {
@@ -73,6 +81,41 @@
       {{ message | t }}
     </div>
   }
+</section>
+
+<section class="card block">
+  <h2>{{ 'settings.goals' | t }}</h2>
+  <p class="muted small">{{ 'settings.goalsHint' | t }}</p>
+  <ul class="goals">
+    @for (metric of goalMetrics(); track metric.id) {
+      <li>
+        <label [for]="'goal-' + metric.id">{{ metric.icon }} {{ metric.titleKey | t }}</label>
+        <span class="goal">
+          <input
+            class="goal__input"
+            type="number"
+            inputmode="decimal"
+            min="0"
+            [step]="goalStep(metric)"
+            [id]="'goal-' + metric.id"
+            [value]="metric.dailyGoal"
+            (change)="saveGoal(metric, $event)"
+          />
+          <span class="muted">{{ metric.unitKey | t }}</span>
+          @if (isCustomGoal(metric)) {
+            <button
+              class="goal__reset"
+              [title]="'settings.goalReset' | t"
+              [attr.aria-label]="'settings.goalReset' | t"
+              (click)="resetGoal(metric)"
+            >
+              ↺
+            </button>
+          }
+        </span>
+      </li>
+    }
+  </ul>
 </section>
 
 <section class="card block">

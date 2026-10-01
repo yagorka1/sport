@@ -67,6 +67,22 @@
     <uses-permission android:name="android.permission.health.READ_SLEEP" />
     <uses-permission android:name="android.permission.health.READ_WEIGHT" />
 
+    <!-- Workout details, see SESSION_METRICS in HealthConnectPlugin.kt. -->
+    <uses-permission android:name="android.permission.health.READ_TOTAL_CALORIES_BURNED" />
+    <uses-permission android:name="android.permission.health.READ_SPEED" />
+    <uses-permission android:name="android.permission.health.READ_ELEVATION_GAINED" />
+    <uses-permission android:name="android.permission.health.READ_STEPS_CADENCE" />
+    <uses-permission android:name="android.permission.health.READ_POWER" />
+
+    <!--
+      Without this, Health Connect only returns data from 30 days before the first grant.
+      Not tied to any metric: the plugin adds it to every access request when supported.
+    -->
+    <uses-permission android:name="android.permission.health.READ_HEALTH_DATA_HISTORY" />
+
+    <!-- GPS routes of workouts written by other apps, without asking for each session. -->
+    <uses-permission android:name="android.permission.health.READ_EXERCISE_ROUTES" />
+
     <!-- Required so the app can see an installed Health Connect at all. -->
     <queries>
         <package android:name="com.google.android.apps.healthdata" />

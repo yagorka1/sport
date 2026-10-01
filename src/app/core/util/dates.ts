@@ -30,6 +30,17 @@ export function lastDays(days: number): DateRange {
   return { from: toDayKey(addDays(end, -(days - 1))), to: toDayKey(end) };
 }
 
+/** Splits a range into consecutive chunks of at most `maxDays` days, oldest first. */
+export function splitRange(range: DateRange, maxDays: number): DateRange[] {
+  const chunks: DateRange[] = [];
+  const end = fromDayKey(range.to);
+  for (let start = fromDayKey(range.from); start <= end; start = addDays(start, maxDays)) {
+    const chunkEnd = addDays(start, maxDays - 1);
+    chunks.push({ from: toDayKey(start), to: toDayKey(chunkEnd < end ? chunkEnd : end) });
+  }
+  return chunks;
+}
+
 export function rangeForPeriod(period: Period): DateRange {
   return lastDays(PERIOD_DAYS[period]);
 }

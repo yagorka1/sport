@@ -4,25 +4,47 @@
 @if (stats.workouts().length === 0) {
   <p class="muted top">{{ 'workouts.empty' | t }}</p>
 } @else {
+  @if (routesNotSynced()) {
+    <div class="notice top">{{ 'workouts.routesNotSynced' | t }}</div>
+  }
+
   <section class="types">
+    <button class="card type" [class.type--on]="typeFilter() === null" (click)="typeFilter.set(null)">
+      <strong>{{ 'workouts.allTypes' | t }}</strong>
+      <span class="muted">{{ 'workouts.count' | t: { n: stats.workouts().length } }}</span>
+    </button>
     @for (stat of byType(); track stat.type) {
-      <div class="card type">
+      <button
+        class="card type"
+        [class.type--on]="typeFilter() === stat.type"
+        [attr.aria-pressed]="typeFilter() === stat.type"
+        (click)="toggleType(stat.type)"
+      >
         <strong>{{ typeTitle(stat.type) }}</strong>
         <span class="muted">{{ 'workouts.count' | t: { n: stat.count } }} · {{ duration(stat.totalSec) }}</span>
-      </div>
+      </button>
     }
   </section>
 
+  <div class="toolbar">
+    <label class="muted" for="workouts-sort">{{ 'workouts.sortBy' | t }}</label>
+    <select id="workouts-sort" class="select" [value]="sort()" (change)="setSort($event)">
+      @for (option of sortOptions; track option.value) {
+        <option [value]="option.value">{{ option.label | t }}</option>
+      }
+    </select>
+  </div>
+
   <section class="feed">
-    @for (workout of stats.workouts(); track workout.id) {
-      <article class="card item">
+    @for (workout of visible(); track workout.id) {
+      <a class="card item" [routerLink]="['/workouts', workout.id]">
         <header>
           <strong>{{ title(workout) }}</strong>
           <span class="muted">{{ when(workout) }}</span>
         </header>
         <div class="item__row">
           <span>⏱ {{ duration(workout.durationSec) }}</span>
-          @if (workout.distanceM !== null) {
+          @if (workout.distanceM) {
             <span>📍 {{ km(workout.distanceM) }} {{ 'unit.km' | t }}</span>
           }
           @if (workout.calories !== null) {
@@ -34,8 +56,11 @@
           @if (pace(workout); as pace) {
             <span>⚡ {{ 'workouts.pace' | t: { pace: pace } }}</span>
           }
+          @if (hasRoute(workout)) {
+            <span class="item__map">🗺 {{ 'workouts.showMap' | t }}</span>
+          }
         </div>
-      </article>
+      </a>
     }
   </section>
 }

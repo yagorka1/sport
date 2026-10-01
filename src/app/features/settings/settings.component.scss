@@ -55,6 +55,52 @@ code {
   font-size: 11.5px;
 }
 
+.goals {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 10px;
+
+  li {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    font-size: 13.5px;
+  }
+}
+
+.goal {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.goal__input {
+  width: 96px;
+  padding: 7px 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface-2);
+  color: var(--text);
+  font: inherit;
+  text-align: right;
+
+  &:focus {
+    outline: none;
+    border-color: var(--accent);
+  }
+}
+
+.goal__reset {
+  padding: 2px 6px;
+  border: none;
+  background: none;
+  color: var(--text-dim);
+  font-size: 16px;
+}
+
 .metrics {
   margin: 0;
   padding: 0;
