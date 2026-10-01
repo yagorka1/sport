@@ -8,13 +8,13 @@
 export const environment = {
   production: false,
   firebase: {
-    apiKey: 'REPLACE_ME',
-    authDomain: 'REPLACE_ME.firebaseapp.com',
-    projectId: 'REPLACE_ME',
-    storageBucket: 'REPLACE_ME.firebasestorage.app',
-    messagingSenderId: 'REPLACE_ME',
-    appId: 'REPLACE_ME',
+    apiKey: 'AIzaSyDQZbtM5hwUIr0DSmuBDAimVdkdJ_jvgTs',
+    authDomain: 'sport-helth.firebaseapp.com',
+    projectId: 'sport-helth',
+    storageBucket: 'sport-helth.firebasestorage.app',
+    messagingSenderId: '434242695275',
+    appId: '1:434242695275:web:17f3d037893cbe8c7ac12e',
   },
   /** Web client ID from Google Cloud (OAuth 2.0, type "Web application"). Required for APK sign-in. */
-  googleWebClientId: 'REPLACE_ME.apps.googleusercontent.com',
+  googleWebClientId: '434242695275-a61pgv9t4s5qulh12rddnck5d0t9tij3.apps.googleusercontent.com',
 };
