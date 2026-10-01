@@ -57,9 +57,6 @@
               "fileReplacements": []
             },
             "demo": {
-              "optimization": false,
-              "extractLicenses": false,
-              "sourceMap": true,
               "fileReplacements": [
                 {
                   "replace": "src/environments/environment.ts",
@@ -80,7 +77,7 @@
               "buildTarget": "sport-stats:build:development"
             },
             "demo": {
-              "buildTarget": "sport-stats:build:demo"
+              "buildTarget": "sport-stats:build:development,demo"
             }
           },
           "defaultConfiguration": "development"

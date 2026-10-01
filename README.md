@@ -46,8 +46,9 @@ workout list never pulls them. A workout's `route` is `available` (stored), `con
 (Health Connect has a route but the user must allow access to it — done from the workout
 screen in the APK) or `none`. On Android 15+ the app also requests `READ_EXERCISE_ROUTES`,
 which lets routes from other apps be read without asking per workout. The map uses
-Leaflet with OpenStreetMap tiles (untinted: a CSS filter on the tiles renders black in Android
-WebView).
+Leaflet with OpenStreetMap tiles. Leaflet is CommonJS: optimized builds expose its API only
+on the dynamic import's `default`, which `route-map.component.ts` unwraps — check map changes
+with an optimized build (`ng build --configuration=production,demo`), not just `ng serve`.
 
 Each workout also carries whatever Health Connect has for its time span: total calories, steps,
 min/avg/max heart rate plus a heart-rate series (averaged into at most 240 points), average and

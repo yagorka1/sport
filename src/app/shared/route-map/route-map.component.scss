@@ -9,11 +9,27 @@ app-route-map {
   height: 340px;
   border-radius: var(--radius);
   overflow: hidden;
-  // OSM's land color, so tiles that are still loading do not flash.
-  background: #f2efe9;
+  background: var(--surface-2);
 
-  .leaflet-control-attribution a {
-    color: #33569b;
+  // The light OSM tiles would glare inside the dark UI: invert them into a dim map.
+  // Only the tile pane is filtered, so the track keeps its real colors.
+  .leaflet-tile-pane {
+    filter: invert(1) hue-rotate(180deg) brightness(0.85) contrast(0.9) saturate(0.4);
+  }
+
+  .leaflet-control-attribution {
+    background: rgb(23 26 33 / 80%);
+    color: var(--text-dim);
+
+    a {
+      color: var(--text-dim);
+    }
+  }
+
+  .leaflet-bar a {
+    background: var(--surface);
+    color: var(--text);
+    border-bottom-color: var(--border);
   }
 }
 

@@ -31,8 +31,7 @@ type Leaflet = typeof import('leaflet');
 })
 export class RouteMapComponent {
   readonly points = input.required<readonly LatLng[]>();
-  /** Darker than the app accent: it has to stand out on the light map. */
-  readonly color = input('#1f6fe5');
+  readonly color = input('#4f8ff7');
 
   protected readonly failed = signal(false);
 
@@ -46,7 +45,11 @@ export class RouteMapComponent {
 
   constructor() {
     afterRenderEffect(() => {
-      void this.draw(this.container().nativeElement, this.points(), this.color());
+      // Any failure shows a message instead of a silent empty box.
+      this.draw(this.container().nativeElement, this.points(), this.color()).catch((e: unknown) => {
+        console.error('Route map failed', e);
+        this.failed.set(true);
+      });
     });
 
     inject(DestroyRef).onDestroy(() => {
@@ -57,13 +60,7 @@ export class RouteMapComponent {
   }
 
   private async draw(element: HTMLElement, points: readonly LatLng[], color: string): Promise<void> {
-    let L: Leaflet;
-    try {
-      L = await loadLeaflet();
-    } catch {
-      this.failed.set(true);
-      return;
-    }
+    const L = await loadLeaflet();
 
     // A single bad coordinate turns the bounds into NaN and the whole map into an empty box.
     const valid = points.filter(([lat, lng]) => Number.isFinite(lat) && Number.isFinite(lng));
@@ -90,9 +87,8 @@ export class RouteMapComponent {
   private createMap(L: Leaflet, element: HTMLElement): LeafletMap {
     const map = L.map(element, { zoomControl: true });
 
-    // Plain OSM tiles, no CSS filter on them: darkening the tiles with a filter looked fine in
-    // desktop browsers but rendered as a solid black box in Android WebView. (Free dark tile
-    // sets such as CARTO's now require an API key.) OSM requires visible attribution.
+    // OSM tiles, darkened in CSS to suit the UI (free dark tile sets such as CARTO's now require
+    // an API key). OSM requires visible attribution.
     L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
       maxZoom: 19,
       attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
@@ -123,8 +119,17 @@ let leaflet: Promise<Leaflet> | null = null;
 
 function loadLeaflet(): Promise<Leaflet> {
   // A failed chunk load must not stick: the next attempt retries the import.
-  return (leaflet ??= import('leaflet').catch((e: unknown) => {
+  return (leaflet ??= import('leaflet').then(unwrapCommonJs, (e: unknown) => {
     leaflet = null;
     throw e;
   }));
+}
+
+/**
+ * Leaflet is a CommonJS module. In development builds its exports show up on the import's
+ * namespace, but optimized builds hand them over only as `default` — `L.map` was undefined
+ * in the APK and the map stayed an empty box. Take whichever object actually has the API.
+ */
+function unwrapCommonJs(module: Leaflet & { default?: Leaflet }): Leaflet {
+  return typeof module.map === 'function' ? module : module.default!;
 }
